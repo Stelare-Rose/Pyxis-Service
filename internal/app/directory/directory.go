@@ -12,6 +12,7 @@ import (
 )
 
 func IndexActiveItems(){
+	//TODO: Fix For Windows
 	itemChanged := false;
 	home, err := os.UserHomeDir();
 	if err != nil {
