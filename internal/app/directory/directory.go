@@ -40,6 +40,10 @@ func IndexActiveItems(){
 	for _, e := range entries {
 		h := hashing.MetadataHash(filepath.Join(path, e.Name()));
 		id := strings.Split(e.Name(), "§");
+		if len(id) == 1 {
+			fmt.Println("Broken Item Name Found at", id);
+			continue;
+		}
 		id = strings.Split(id[1], ".");
 		index := getItemInIndex(items, id[0]);
 		if index == -1 {
@@ -47,12 +51,13 @@ func IndexActiveItems(){
 			item := file.ReadActiveFile(filepath.Join(path, e.Name())); 
 			items.Item = append(items.Item, item);
 			items.Item[len(items.Item) - 1].Hash = h;
-
+			items.Item[len(items.Item) - 1].Path = filepath.Join("Active", e.Name());
 		} else if h != items.Item[index].Hash {
 			itemChanged = true;
 			item := file.ReadActiveFile(filepath.Join(path, e.Name()));
 			items.Item[index] = item;
 			items.Item[index].Hash = h;
+			items.Item[index].Path = filepath.Join("Active", e.Name());
 		} else {
 			fmt.Printf("Id %v was not changed.\n", id[0]);
 		}
