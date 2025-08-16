@@ -10,7 +10,7 @@ type Item struct {
 	Name string `json:"name"`;
 	Status string `json:"status"`;
 	HardDeadline string `json:"hardDeadline"`;
-	AfterTasks []string `json:"AfterTasks"`;
+	AfterTask []string `json:"afterTask"`;
 	Tags []string `json:"tags"`;
 	Path string `json:"path"`;
 	Hash uint64 `json:"hash"`;

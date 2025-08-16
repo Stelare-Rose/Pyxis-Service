@@ -31,7 +31,7 @@ func ReadActiveFile(path string) types.Item {
 			for i := range tasks {
 				tasks[i] = strings.TrimSpace(tasks[i]);
 			}
-			item.AfterTasks = append(item.AfterTasks, tasks...);
+			item.AfterTask = append(item.AfterTask, tasks...);
 		case "[Tags]":
 			tags := strings.Split(splitted[1], ",");
 			for i := range tags {
