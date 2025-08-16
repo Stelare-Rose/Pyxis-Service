@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"github.com/Stelare-Rose/Pyxis-Service/internal/app/hashing"
 	"github.com/Stelare-Rose/Pyxis-Service/internal/app/file"
 	"github.com/Stelare-Rose/Pyxis-Service/internal/app/types"
@@ -37,29 +36,31 @@ func IndexActiveItems(){
 		fmt.Println(err);
 		return;
 	}
+	for i := 0; i < len(items.Item); i++ {
+		file, _ := os.Stat(filepath.Join(path, items.Item[i].Path));	
+		if file == nil {
+			fmt.Printf("Removed %v\n", items.Item[i].Name);
+			items.Item = remove(i, items.Item);
+			i--;
+		}
+	}
 	for _, e := range entries {
 		h := hashing.MetadataHash(filepath.Join(path, e.Name()));
-		id := strings.Split(e.Name(), "§");
-		if len(id) == 1 {
-			fmt.Println("Broken Item Name Found at", id);
-			continue;
-		}
-		id = strings.Split(id[1], ".");
-		index := getItemInIndex(items, id[0]);
+		index := getItemInIndex(items, e.Name());
 		if index == -1 {
 			itemChanged = true;
 			item := file.ReadActiveFile(filepath.Join(path, e.Name())); 
 			items.Item = append(items.Item, item);
 			items.Item[len(items.Item) - 1].Hash = h;
-			items.Item[len(items.Item) - 1].Path = filepath.Join("Active", e.Name());
+			items.Item[len(items.Item) - 1].Path = e.Name();
 		} else if h != items.Item[index].Hash {
 			itemChanged = true;
 			item := file.ReadActiveFile(filepath.Join(path, e.Name()));
 			items.Item[index] = item;
 			items.Item[index].Hash = h;
-			items.Item[index].Path = filepath.Join("Active", e.Name());
+			items.Item[index].Path = e.Name();
 		} else {
-			fmt.Printf("Id %v was not changed.\n", id[0]);
+			fmt.Printf("File %v was not changed.\n", e.Name());
 		}
 	}
 
@@ -69,12 +70,17 @@ func IndexActiveItems(){
 	}
 }
 
-func getItemInIndex(items types.Items, id string) int {
+func getItemInIndex(items types.Items, name string) int {
 	for i, data := range items.Item {
-		if data.Id == id {
+		if data.Path == name {
 			fmt.Println("Id found match at " + data.Name);
 			return i;
 		}
 	}
 	return -1;
+}
+
+func remove(index int, arr []types.Item) []types.Item {
+	arr[index] = arr[len(arr) - 1];
+	return arr[:len(arr) - 1];
 }
