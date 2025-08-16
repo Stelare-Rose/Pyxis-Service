@@ -44,6 +44,16 @@ func IndexActiveItems(){
 			i--;
 		}
 	}
+	for i := 0; i < len(items.Item); i++ {
+		for j := i + 1; j < len(items.Item); j++ {
+			if items.Item[i].Id == items.Item[j].Id {
+			fmt.Printf("Removed %v\n", items.Item[i].Name);
+				items.Item = remove(j, items.Item);
+				j--;
+			}
+		}	
+	}
+	
 	for _, e := range entries {
 		h := hashing.MetadataHash(filepath.Join(path, e.Name()));
 		index := getItemInIndex(items, e.Name());
