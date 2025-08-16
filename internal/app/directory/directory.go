@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 	"github.com/Stelare-Rose/Pyxis-Service/internal/app/hashing"
 	"github.com/Stelare-Rose/Pyxis-Service/internal/app/file"
 	"github.com/Stelare-Rose/Pyxis-Service/internal/app/types"
 )
 
 func IndexActiveItems(){
+	start := time.Now();
 	//TODO: Fix For Windows
 	itemChanged := false;
 	home, err := os.UserHomeDir();
@@ -20,12 +22,12 @@ func IndexActiveItems(){
 	}
 	path := filepath.Join(home, ".local", "share", "Pyxis", "Items", "Active")
 
-	cache, err := os.UserCacheDir();
+	baseCache, err := os.UserCacheDir();
 	if err != nil {
 		fmt.Println(err);
 		return;
 	}
-	cache = filepath.Join(cache, "Pyxis", "index-ongoing", "items.json");
+	cache := filepath.Join(baseCache, "Pyxis", "index-ongoing", "items.json");
 	data, _ := os.ReadFile(cache);
 
 	var items types.Items;
@@ -39,6 +41,7 @@ func IndexActiveItems(){
 	for i := 0; i < len(items.Item); i++ {
 		file, _ := os.Stat(filepath.Join(path, items.Item[i].Path));	
 		if file == nil {
+			itemChanged = true;
 			fmt.Printf("Removed %v\n", items.Item[i].Name);
 			items.Item = remove(i, items.Item);
 			i--;
@@ -47,7 +50,8 @@ func IndexActiveItems(){
 	for i := 0; i < len(items.Item); i++ {
 		for j := i + 1; j < len(items.Item); j++ {
 			if items.Item[i].Id == items.Item[j].Id {
-			fmt.Printf("Removed %v\n", items.Item[i].Name);
+				itemChanged = true;
+				fmt.Printf("Removed %v\n", items.Item[i].Name);
 				items.Item = remove(j, items.Item);
 				j--;
 			}
@@ -72,12 +76,14 @@ func IndexActiveItems(){
 		} else {
 			fmt.Printf("File %v was not changed.\n", e.Name());
 		}
-	}
 
 	if itemChanged {
+		os.WriteFile(filepath.Join(baseCache, "Pyxis", "index-ongoing", "index.lock"), []byte{}, 0666);
 		jsonData, _ := json.Marshal(items);
 		os.WriteFile(cache, jsonData, 0666);
+		os.Remove(filepath.Join(baseCache, "Pyxis", "index-ongoing", "index.lock"));
 	}
+	fmt.Println("Scan and Indexing completed in", time.Since(start));
 }
 
 func getItemInIndex(items types.Items, name string) int {

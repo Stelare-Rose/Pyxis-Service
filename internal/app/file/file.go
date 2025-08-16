@@ -10,7 +10,6 @@ import (
 
 func ReadActiveFile(path string) types.Item {
 	rawData, _ := os.ReadFile(path);
-	fmt.Println(string(rawData));
 	rawData = []byte(strings.TrimSpace(string(rawData)));
 	var item types.Item;
 	for obj := range strings.SplitSeq(string(rawData), "\n") {
