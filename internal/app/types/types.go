@@ -14,4 +14,5 @@ type Item struct {
 	Tags []string `json:"tags"`;
 	Path string `json:"path"`;
 	Hash uint64 `json:"hash"`;
+	Fingerprint int64 `json:"hash"`;
 }

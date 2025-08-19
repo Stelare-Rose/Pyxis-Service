@@ -4,16 +4,22 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"bufio"
 
 	"github.com/Stelare-Rose/Pyxis-Service/internal/app/types"
 )
 
 func ReadActiveFile(path string) types.Item {
-	rawData, _ := os.ReadFile(path);
-	rawData = []byte(strings.TrimSpace(string(rawData)));
+	file, _ := os.Open(path);
+	defer file.Close();
+
+	scanner := bufio.NewScanner(file);
 	var item types.Item;
-	for obj := range strings.SplitSeq(string(rawData), "\n") {
-		splitted := strings.SplitN(obj, ":", 2);
+	for scanner.Scan() {
+		if scanner.Text() == "^^^^^" {
+			break;
+		}
+		splitted := strings.SplitN(scanner.Text(), ":", 2);
 		switch (splitted[0]){
 		case "[Type]":
 			item.Type = splitted[1];		
@@ -42,4 +48,9 @@ func ReadActiveFile(path string) types.Item {
 			}
 	}
 	return item;
+}
+
+func Fingerprint(path string) int64 {
+	file, _ := os.Stat(path);
+	return file.Size() + file.ModTime().Unix();
 }

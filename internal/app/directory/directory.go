@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"time"
-	"github.com/Stelare-Rose/Pyxis-Service/internal/app/hashing"
 	"github.com/Stelare-Rose/Pyxis-Service/internal/app/file"
 	"github.com/Stelare-Rose/Pyxis-Service/internal/app/types"
 )
@@ -59,23 +58,24 @@ func IndexActiveItems(){
 	}
 	
 	for _, e := range entries {
-		h := hashing.MetadataHash(filepath.Join(path, e.Name()));
+		f := file.Fingerprint(filepath.Join(path, e.Name()));
 		index := getItemInIndex(items, e.Name());
 		if index == -1 {
 			itemChanged = true;
 			item := file.ReadActiveFile(filepath.Join(path, e.Name())); 
 			items.Item = append(items.Item, item);
-			items.Item[len(items.Item) - 1].Hash = h;
+			items.Item[len(items.Item) - 1].Fingerprint = f;
 			items.Item[len(items.Item) - 1].Path = e.Name();
-		} else if h != items.Item[index].Hash {
+		} else if f != items.Item[index].Fingerprint {
 			itemChanged = true;
 			item := file.ReadActiveFile(filepath.Join(path, e.Name()));
 			items.Item[index] = item;
-			items.Item[index].Hash = h;
+			items.Item[index].Fingerprint = f;
 			items.Item[index].Path = e.Name();
 		} else {
 			fmt.Printf("File %v was not changed.\n", e.Name());
 		}
+	}
 
 	if itemChanged {
 		os.WriteFile(filepath.Join(baseCache, "Pyxis", "index-ongoing", "index.lock"), []byte{}, 0666);
