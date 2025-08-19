@@ -27,7 +27,7 @@ func Start(){
 		for {
 			<-batch
 			fmt.Println("Batched Index.. Debouncing");
-			time.Sleep(5 * time.Second);
+			time.Sleep(1 * time.Second);
 			
 			directory.IndexActiveItems();
 			e := events;
