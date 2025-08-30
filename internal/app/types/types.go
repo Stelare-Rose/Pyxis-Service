@@ -5,14 +5,26 @@ type Items struct {
 }
 
 type Item struct {
-	Type string `json:"type"`;
 	Id string `json:"id"`;
+	Type string `json:"type"`;
 	Name string `json:"name"`;
 	Status string `json:"status"`;
 	HardDeadline string `json:"hardDeadline"`;
+	SoftDeadline string;
 	AfterTask []string `json:"afterTask"`;
 	Tags []string `json:"tags"`;
 	Path string `json:"path"`;
-	Hash uint64 `json:"hash"`;
-	Fingerprint int64 `json:"hash"`;
+	Fingerprint int64 `json:"fingerprint"`;
+	IsArchived bool;
+	IsVerified bool;
 }
+
+type Tags struct {
+	Tags map[string]Tag `toml:"tags"`;
+}
+
+type Tag struct {
+	Colors []string `toml:"colors"`;
+}
+
+

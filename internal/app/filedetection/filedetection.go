@@ -3,10 +3,12 @@ package filedetection
 import (
 	"fmt"
 	"log"
-	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
+	"github.com/Stelare-Rose/Pyxis-Service/internal/app/core"
+	"github.com/Stelare-Rose/Pyxis-Service/internal/app/database"
 	"github.com/Stelare-Rose/Pyxis-Service/internal/app/directory"
 	"github.com/fsnotify/fsnotify"
 )
@@ -28,17 +30,47 @@ func Start(){
 			<-batch
 			fmt.Println("Batched Index.. Debouncing");
 			time.Sleep(1 * time.Second);
-			
-			directory.IndexActiveItems();
+			start := time.Now();
 			e := events;
 			events = nil;
 
+			files := make(map[string]struct{});
 			if e != nil {
 				fmt.Println("List of Events:");
 				for _, i := range e {
-					fmt.Println(i);
+					name := filepath.Clean(i.Name);
+					if strings.Contains(name, "/.stfolder") {
+						continue;
+					}
+					if i.Name == filepath.Join(directory.GetDataPath(), "tags.toml") {
+						files["tags.toml"] = struct{}{};
+						continue;
+					}
+					parts := strings.Split(name, string(filepath.Separator));
+
+					if len(parts) >= 2 {
+						files[filepath.Join(parts[len(parts) - 2], parts[len(parts) - 1])] = struct {}{};
+					} else {
+						files[name] = struct{}{};
+					}
+
+					fmt.Println(i.String());
 				}
+				tx := database.StartTransaction();
+				fmt.Println(files);
+				for key := range files {
+					if key == "tags.toml" {
+						core.IndexTags(tx);
+						continue;
+					}
+					if strings.HasPrefix(key, "Active/"){
+						core.IndexActiveItem(key, tx);
+						continue;
+					}
+				}
+				database.EndTransaction(tx);
 			}
+			fmt.Println("Small Indexing completed in", time.Since(start));
 		}
 	}()
 
@@ -64,9 +96,13 @@ func Start(){
         }
     }()
 
-	home, _ := os.UserHomeDir();
-	path := filepath.Join(home, ".local", "share", "Pyxis", "Items", "Active")
+	path := filepath.Join(directory.GetDataPath());
 	err = watcher.Add(path);
+	path = filepath.Join(directory.GetDataPath(), "Items", "Active");
+	err = watcher.Add(path);
+	if err != nil {
+		fmt.Println(err);
+	}
 	<- end;
 }
 

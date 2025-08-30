@@ -16,7 +16,7 @@ func ReadActiveFile(path string) types.Item {
 	scanner := bufio.NewScanner(file);
 	var item types.Item;
 	for scanner.Scan() {
-		if scanner.Text() == "^^^^^" {
+		if scanner.Text() == "-----" {
 			break;
 		}
 		splitted := strings.SplitN(scanner.Text(), ":", 2);
@@ -30,6 +30,8 @@ func ReadActiveFile(path string) types.Item {
 		case "[Status]":
 			item.Status = splitted[1];
 		case "[Hard-Deadline]":
+			item.HardDeadline = splitted[1];
+		case "[Soft-Deadline]":
 			item.HardDeadline = splitted[1];
 		case "[After-Task]":
 			tasks := strings.Split(splitted[1], ",");
