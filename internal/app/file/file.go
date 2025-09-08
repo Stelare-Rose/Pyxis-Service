@@ -32,7 +32,7 @@ func ReadActiveFile(path string) types.Item {
 		case "[Hard-Deadline]":
 			item.HardDeadline = splitted[1];
 		case "[Soft-Deadline]":
-			item.HardDeadline = splitted[1];
+			item.SoftDeadline = splitted[1];
 		case "[After-Task]":
 			tasks := strings.Split(splitted[1], ",");
 			for i := range tasks {

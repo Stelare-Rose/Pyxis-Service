@@ -29,7 +29,7 @@ func Start(){
 		for {
 			<-batch
 			fmt.Println("Batched Index.. Debouncing");
-			time.Sleep(1 * time.Second);
+			time.Sleep(400 * time.Millisecond);
 			start := time.Now();
 			e := events;
 			events = nil;
