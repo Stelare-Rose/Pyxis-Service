@@ -5,16 +5,16 @@ type Items struct {
 }
 
 type Item struct {
-	Id string `json:"id"`;
-	Type string `json:"type"`;
-	Name string `json:"name"`;
-	Status string `json:"status"`;
-	HardDeadline string `json:"hardDeadline"`;
-	SoftDeadline string;
-	AfterTask []string `json:"afterTask"`;
-	Tags []string `json:"tags"`;
-	Path string `json:"path"`;
-	Fingerprint int64 `json:"fingerprint"`;
+	Id string;
+	Type string;
+	Name string;
+	Status string;
+	EndDate string;
+	StartDate string;
+	AfterTask []string;
+	Tags []string;
+	Path string;
+	Fingerprint int64;
 	IsArchived bool;
 	IsVerified bool;
 }

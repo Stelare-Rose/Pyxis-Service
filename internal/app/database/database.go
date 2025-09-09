@@ -27,8 +27,8 @@ func Create(){
 			type TEXT,
 			name TEXT,
 			status TEXT,
-			hardDeadline TEXT,
-			softDeadline TEXT,
+			endDate TEXT,
+			startDate TEXT,
 			path TEXT,
 			fingerprint int64,
 			isArchived bool,
@@ -71,14 +71,14 @@ func AddItem(Item *types.Item, isArchived bool){
 		open();
 	}
 	_, err := db.Exec(
-		`INSERT INTO items (id, type, name, status, hardDeadline, softDeadline, path, fingerprint, isArchived, verified) 
+		`INSERT INTO items (id, type, name, status, endDate, startDate, path, fingerprint, isArchived, verified) 
 		VALUES (?,?,?,?,?,?,?,?,?,?)
 		ON CONFLICT(id) DO UPDATE SET
 			type = excluded.type,
 			name = excluded.name,
 			status = excluded.status,
-			hardDeadline = excluded.hardDeadline,
-			softDeadline = excluded.softDeadline,
+			endDate = excluded.endDate,
+			startDate = excluded.startDate,
 			path = excluded.path,
 			fingerprint = excluded.fingerprint,
 			isArchived = excluded.isArchived,
@@ -88,8 +88,8 @@ func AddItem(Item *types.Item, isArchived bool){
 		Item.Type, 
 		Item.Name,
 		Item.Status,
-		Item.HardDeadline,
-		Item.SoftDeadline,
+		Item.EndDate,
+		Item.StartDate,
 		Item.Path,
 		Item.Fingerprint,
 		isArchived,
@@ -101,14 +101,14 @@ func AddItem(Item *types.Item, isArchived bool){
 }
 func AddItemWithTransaction(Item *types.Item, isArchived bool, tx *sql.Tx){
 	_, err := tx.Exec(
-		`INSERT INTO items (id, type, name, status, hardDeadline, softDeadline, path, fingerprint, isArchived, verified) 
+		`INSERT INTO items (id, type, name, status, endDate, startDate, path, fingerprint, isArchived, verified) 
 		VALUES (?,?,?,?,?,?,?,?,?,?)
 		ON CONFLICT(id) DO UPDATE SET
 			type = excluded.type,
 			name = excluded.name,
 			status = excluded.status,
-			hardDeadline = excluded.hardDeadline,
-			softDeadline = excluded.softDeadline,
+			endDate = excluded.endDate,
+			startDate = excluded.startDate,
 			path = excluded.path,
 			fingerprint = excluded.fingerprint,
 			isArchived = excluded.isArchived,
@@ -118,8 +118,8 @@ func AddItemWithTransaction(Item *types.Item, isArchived bool, tx *sql.Tx){
 		Item.Type, 
 		Item.Name,
 		Item.Status,
-		Item.HardDeadline,
-		Item.SoftDeadline,
+		Item.EndDate,
+		Item.StartDate,
 		Item.Path,
 		Item.Fingerprint,
 		isArchived,
@@ -173,7 +173,7 @@ func QueryItemById(id string) (types.Item, error){
 		`SELECT * FROM items WHERE id=?;`, id,
 	)
 	
-	err := row.Scan(&item.Id, &item.Type, &item.Name, &item.Status, &item.HardDeadline, &item.SoftDeadline, &item.Path, &item.Fingerprint, &item.IsArchived, &item.IsVerified);
+	err := row.Scan(&item.Id, &item.Type, &item.Name, &item.Status, &item.EndDate, &item.StartDate, &item.Path, &item.Fingerprint, &item.IsArchived, &item.IsVerified);
 	if err != nil {
 		fmt.Println(err);
 	}
