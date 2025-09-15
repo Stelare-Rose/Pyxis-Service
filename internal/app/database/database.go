@@ -35,18 +35,22 @@ func Create(){
 			verified bool
 		);
 		CREATE TABLE IF NOT EXISTS tags (
-			tag TEXT PRIMARY KEY,
+			id TEXT PRIMARY KEY,
+			name TEXT,
 			color TEXT,
 			verified bool
 		);
 		CREATE TABLE IF NOT EXISTS items_tags (
 			item_id TEXT,
-			tag_name TEXT,
-			PRIMARY KEY (item_id, tag_name),
+			tag_id TEXT,
+			PRIMARY KEY (item_id, tag_id),
 			FOREIGN KEY (item_id) REFERENCES items(id)
 		);
 		CREATE INDEX IF NOT EXISTS idx_items_path ON items(path);
 	`)
+
+	os.WriteFile(filepath.Join(directory.GetCachePath(), "version"), []byte("0.0.1"), 0666);
+
 	if err != nil{
 		fmt.Println(err);
 	}
@@ -138,26 +142,28 @@ func RemoveTagWithTransaction(id string, tx *sql.Tx){
 	}
 }
 
-func AddTagWithTransaction(id string, tag string, tx *sql.Tx){
+func AddTagWithTransaction(id string, tag_id string, tx *sql.Tx){
+	fmt.Println("adding " + tag_id);
 	_, err := tx.Exec(
-		`INSERT OR IGNORE INTO items_tags (item_id, tag_name) values (?, ?)`, 
-		id, tag);
+		`INSERT OR IGNORE INTO items_tags (item_id, tag_id) values (?, ?)`, 
+		id, tag_id);
 
 	if err != nil {
 		fmt.Println(err);
 	}
 }
 
-func AddTagsWithTransaction(name string, colors []string, tx *sql.Tx){
+func AddTagsWithTransaction(id string, name string, colors []string, tx *sql.Tx){
 	color := strings.Join(colors, ",")
 	_, err := tx.Exec(
 		`
-		INSERT INTO tags (tag, color, verified) values (?, ?, 1) 
-		ON CONFLICT (tag) DO UPDATE SET
+		INSERT INTO tags (id, name, color, verified) values (?, ?, ?, 1) 
+		ON CONFLICT (id) DO UPDATE SET
+			name = excluded.name,
 			color = excluded.color,
 			verified = 1
 		`,
-		name, color);
+		id, name, color);
 	if err != nil {
 		fmt.Println(err);
 	}

@@ -24,6 +24,7 @@ type Tags struct {
 }
 
 type Tag struct {
+	Name string `toml:"name"`;
 	Colors []string `toml:"colors"`;
 }
 

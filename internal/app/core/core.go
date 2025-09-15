@@ -88,12 +88,13 @@ func IndexTags(tx *sql.Tx){
 	database.ResetTags(tx);
 	var tags types.Tags;
 	_, err := toml.DecodeFile(filepath.Join(directory.GetDataPath(), "tags.toml"), &tags);
+	fmt.Println(tags);
 	if err != nil {
 		fmt.Println(err);
 	}
 
-	for name, tag := range tags.Tags {
-		database.AddTagsWithTransaction(name, tag.Colors, tx);
+	for id, tag := range tags.Tags {
+		database.AddTagsWithTransaction(id, tag.Name, tag.Colors, tx);
 	}
 
 	if endTx {
