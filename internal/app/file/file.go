@@ -46,7 +46,11 @@ func ReadActiveFile(path string) types.Item {
 		case "[Tags]":
 			tags := strings.Split(splitted[1], ",");
 			for i := range tags {
-				tags[i] = strings.Split(tags[i], "::")[1];
+				parts := strings.Split(tags[i], "::");
+				if len(parts) < 2 {
+					continue;
+				}
+				tags[i] = parts[1];
 				tags[i] = strings.TrimSpace(tags[i]);
 			}
 			item.Tags = append(item.Tags, tags...);
