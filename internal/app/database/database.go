@@ -17,6 +17,13 @@ import (
 var db *sql.DB
 
 func Create(){
+	versionCode := "0.0.2"
+	data, _ := os.ReadFile(filepath.Join(directory.GetCachePath(), "version"));
+	if string(data) != versionCode {
+		fmt.Println("Regenerating DB");
+		os.Remove(filepath.Join(directory.GetCachePath(), "main.db"));
+	}
+
 	if db == nil {
 		open();
 	}
@@ -29,6 +36,7 @@ func Create(){
 			status TEXT,
 			endDate TEXT,
 			startDate TEXT,
+			priorityDate TEXT,
 			path TEXT,
 			fingerprint int64,
 			isArchived bool,
@@ -49,7 +57,7 @@ func Create(){
 		CREATE INDEX IF NOT EXISTS idx_items_path ON items(path);
 	`)
 
-	os.WriteFile(filepath.Join(directory.GetCachePath(), "version"), []byte("0.0.1"), 0666);
+	os.WriteFile(filepath.Join(directory.GetCachePath(), "version"), []byte(versionCode), 0666);
 
 	if err != nil{
 		fmt.Println(err);
@@ -75,14 +83,15 @@ func AddItem(Item *types.Item, isArchived bool){
 		open();
 	}
 	_, err := db.Exec(
-		`INSERT INTO items (id, type, name, status, endDate, startDate, path, fingerprint, isArchived, verified) 
-		VALUES (?,?,?,?,?,?,?,?,?,?)
+		`INSERT INTO items (id, type, name, status, endDate, startDate, priorityDate, path, fingerprint, isArchived, verified) 
+		VALUES (?,?,?,?,?,?,?,?,?,?,?)
 		ON CONFLICT(id) DO UPDATE SET
 			type = excluded.type,
 			name = excluded.name,
 			status = excluded.status,
 			endDate = excluded.endDate,
 			startDate = excluded.startDate,
+			priorityDate = excluded.priorityDate,
 			path = excluded.path,
 			fingerprint = excluded.fingerprint,
 			isArchived = excluded.isArchived,
@@ -94,6 +103,7 @@ func AddItem(Item *types.Item, isArchived bool){
 		Item.Status,
 		Item.EndDate,
 		Item.StartDate,
+		Item.PriorityDate,
 		Item.Path,
 		Item.Fingerprint,
 		isArchived,
@@ -105,14 +115,15 @@ func AddItem(Item *types.Item, isArchived bool){
 }
 func AddItemWithTransaction(Item *types.Item, isArchived bool, tx *sql.Tx){
 	_, err := tx.Exec(
-		`INSERT INTO items (id, type, name, status, endDate, startDate, path, fingerprint, isArchived, verified) 
-		VALUES (?,?,?,?,?,?,?,?,?,?)
+		`INSERT INTO items (id, type, name, status, endDate, startDate, priorityDate, path, fingerprint, isArchived, verified) 
+		VALUES (?,?,?,?,?,?,?,?,?, ?,?)
 		ON CONFLICT(id) DO UPDATE SET
 			type = excluded.type,
 			name = excluded.name,
 			status = excluded.status,
 			endDate = excluded.endDate,
 			startDate = excluded.startDate,
+			priorityDate = excluded.priorityDate,
 			path = excluded.path,
 			fingerprint = excluded.fingerprint,
 			isArchived = excluded.isArchived,
@@ -124,6 +135,7 @@ func AddItemWithTransaction(Item *types.Item, isArchived bool, tx *sql.Tx){
 		Item.Status,
 		Item.EndDate,
 		Item.StartDate,
+		Item.PriorityDate,
 		Item.Path,
 		Item.Fingerprint,
 		isArchived,
@@ -179,7 +191,7 @@ func QueryItemById(id string) (types.Item, error){
 		`SELECT * FROM items WHERE id=?;`, id,
 	)
 	
-	err := row.Scan(&item.Id, &item.Type, &item.Name, &item.Status, &item.EndDate, &item.StartDate, &item.Path, &item.Fingerprint, &item.IsArchived, &item.IsVerified);
+	err := row.Scan(&item.Id, &item.Type, &item.Name, &item.Status, &item.EndDate, &item.StartDate, &item.PriorityDate, &item.Path, &item.Fingerprint, &item.IsArchived, &item.IsVerified);
 	if err != nil {
 		fmt.Println(err);
 	}

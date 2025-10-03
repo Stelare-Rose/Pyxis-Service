@@ -37,6 +37,8 @@ func ReadActiveFile(path string) types.Item {
 			item.EndDate = splitted[1];
 		case "[Start-Date]":
 			item.StartDate = splitted[1];
+		case "[Priority-Date]":
+			item.PriorityDate = splitted[1];
 		case "[After-Task]":
 			tasks := strings.Split(splitted[1], ",");
 			for i := range tasks {

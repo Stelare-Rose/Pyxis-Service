@@ -11,6 +11,7 @@ type Item struct {
 	Status string;
 	EndDate string;
 	StartDate string;
+	PriorityDate string;
 	AfterTask []string;
 	Tags []string;
 	Path string;
