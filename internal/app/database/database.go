@@ -55,6 +55,12 @@ func Create(){
 			FOREIGN KEY (item_id) REFERENCES items(id)
 		);
 		CREATE INDEX IF NOT EXISTS idx_items_path ON items(path);
+		CREATE INDEX IF NOT EXISTS idx_items_status_archived ON items(status, isArchived);
+		CREATE INDEX IF NOT EXISTS idx_items_priorityDate ON items(priorityDate);
+		CREATE INDEX IF NOT EXISTS idx_items_name ON items(name);
+
+		CREATE INDEX IF NOT EXISTS idx_items_tags_item_id ON items_tags(item_id);
+		CREATE INDEX IF NOT EXISTS idx_items_tags_tag_id ON items_tags(tag_id);
 	`)
 
 	os.WriteFile(filepath.Join(directory.GetCachePath(), "version"), []byte(versionCode), 0666);
