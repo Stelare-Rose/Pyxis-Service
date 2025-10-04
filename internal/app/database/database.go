@@ -17,7 +17,7 @@ import (
 var db *sql.DB
 
 func Create(){
-	versionCode := "0.0.2"
+	versionCode := "0.0.3"
 	data, _ := os.ReadFile(filepath.Join(directory.GetCachePath(), "version"));
 	if string(data) != versionCode {
 		fmt.Println("Regenerating DB");
@@ -40,7 +40,8 @@ func Create(){
 			path TEXT,
 			fingerprint int64,
 			isArchived bool,
-			verified bool
+			verified bool,
+			sortDate AS (COALESCE(NULLIF(startDate, ''), NULLIF(endDate, ''), NULLIF(priorityDate, '')))
 		);
 		CREATE TABLE IF NOT EXISTS tags (
 			id TEXT PRIMARY KEY,
@@ -57,6 +58,7 @@ func Create(){
 		CREATE INDEX IF NOT EXISTS idx_items_path ON items(path);
 		CREATE INDEX IF NOT EXISTS idx_items_status_archived ON items(status, isArchived);
 		CREATE INDEX IF NOT EXISTS idx_items_priorityDate ON items(priorityDate);
+		CREATE INDEX IF NOT EXISTS idx_items_sortDate ON items(sortDate);
 		CREATE INDEX IF NOT EXISTS idx_items_name ON items(name);
 
 		CREATE INDEX IF NOT EXISTS idx_items_tags_item_id ON items_tags(item_id);
