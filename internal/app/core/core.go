@@ -34,9 +34,10 @@ func CleanIndexActiveItems() {
 	for _, e := range entries {
 		fmt.Println(e.Name());
 		f, _ := database.QueryItemFingerprintByPath(filepath.Join("Active", e.Name()));
+		curr := file.Fingerprint(filepath.Join(path, e.Name()));
 		fmt.Println(f);
-		if f == 0 {
-			f = file.Fingerprint(filepath.Join(path, e.Name()));
+		if f == 0 || f != curr {
+			f = curr;
 			item := file.ReadActiveFile(filepath.Join(path, e.Name()));
 			database.RemoveTagWithTransaction(item.Id, tx);
 			for _, tag := range item.Tags {
