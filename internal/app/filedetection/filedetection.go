@@ -42,6 +42,9 @@ func Start(){
 					if strings.Contains(name, "/.stfolder") {
 						continue;
 					}
+					if strings.Contains(name, ".syncthing"){
+						continue;
+					}
 					if i.Name == filepath.Join(directory.GetDataPath(), "tags.toml") {
 						files["tags.toml"] = struct{}{};
 						continue;
