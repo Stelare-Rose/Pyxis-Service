@@ -17,7 +17,8 @@ import (
 var db *sql.DB
 
 func Create(){
-	versionCode := "0.0.3"
+	versionCode := "0.0.3.2"
+	fmt.Println("Pyxis Running on Version Code " + versionCode + "!");
 	data, _ := os.ReadFile(filepath.Join(directory.GetCachePath(), "version"));
 	if string(data) != versionCode {
 		fmt.Println("Regenerating DB");
@@ -45,7 +46,7 @@ func Create(){
 		);
 		CREATE TABLE IF NOT EXISTS tags (
 			id TEXT PRIMARY KEY,
-			name TEXT,
+			tag TEXT,
 			color TEXT,
 			verified bool
 		);
@@ -173,17 +174,17 @@ func AddTagWithTransaction(id string, tag_id string, tx *sql.Tx){
 	}
 }
 
-func AddTagsWithTransaction(id string, name string, colors []string, tx *sql.Tx){
+func AddTagsWithTransaction(id string, tag string, colors []string, tx *sql.Tx){
 	color := strings.Join(colors, ",")
 	_, err := tx.Exec(
 		`
-		INSERT INTO tags (id, name, color, verified) values (?, ?, ?, 1) 
+		INSERT INTO tags (id, tag, color, verified) values (?, ?, ?, 1) 
 		ON CONFLICT (id) DO UPDATE SET
-			name = excluded.name,
+			tag = excluded.tag,
 			color = excluded.color,
 			verified = 1
 		`,
-		id, name, color);
+		id, tag, color);
 	if err != nil {
 		fmt.Println(err);
 	}

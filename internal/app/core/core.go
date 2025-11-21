@@ -32,10 +32,8 @@ func CleanIndexActiveItems() {
 
 	tx := database.StartTransaction()
 	for _, e := range entries {
-		fmt.Println(e.Name());
 		f, _ := database.QueryItemFingerprintByPath(filepath.Join("Active", e.Name()));
 		curr := file.Fingerprint(filepath.Join(path, e.Name()));
-		fmt.Println(f);
 		if f == 0 || f != curr {
 			f = curr;
 			item := file.ReadActiveFile(filepath.Join(path, e.Name()));
@@ -95,7 +93,7 @@ func IndexTags(tx *sql.Tx){
 	}
 
 	for id, tag := range tags.Tags {
-		database.AddTagsWithTransaction(id, tag.Name, tag.Colors, tx);
+		database.AddTagsWithTransaction(id, tag.Tag, tag.Color, tx);
 	}
 
 	if endTx {
