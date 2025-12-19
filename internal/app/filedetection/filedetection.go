@@ -22,6 +22,8 @@ func Start(){
 	if err != nil {
 		log.Fatal(err);
 	}
+
+	// Close Watcher if Program is Done
 	defer watcher.Close();
 
 	// Debounce
@@ -36,7 +38,11 @@ func Start(){
 
 			files := make(map[string]struct{});
 			if e != nil {
+				// I think I was drunk when I wrote this code, I'll refactor it some day
+				// TODO: Refactor
 				fmt.Println("List of Events:");
+
+				// Process Filesystem Events into Map of Files
 				for _, i := range e {
 					name := filepath.Clean(i.Name);
 					if strings.Contains(name, "/.stfolder") {
@@ -59,6 +65,8 @@ func Start(){
 
 					fmt.Println(i.String());
 				}
+				
+				// Indexing
 				tx := database.StartTransaction();
 				fmt.Println(files);
 				for key := range files {
@@ -66,7 +74,7 @@ func Start(){
 						core.IndexTags(tx);
 						continue;
 					}
-					if strings.HasPrefix(key, "Active/"){
+					if strings.HasPrefix(key, "Active/") && strings.HasSuffix(key, ".task"){
 						core.IndexActiveItem(key, tx);
 						continue;
 					}
@@ -77,6 +85,7 @@ func Start(){
 		}
 	}()
 
+	// Start Watcher in Goroutine
 	go func() {
         for {
             select {
@@ -99,6 +108,7 @@ func Start(){
         }
     }()
 
+	// Defile Paths, Add Paths to Watcher
 	path := filepath.Join(directory.GetDataPath());
 	err = watcher.Add(path);
 	path = filepath.Join(directory.GetDataPath(), "Items", "Active");

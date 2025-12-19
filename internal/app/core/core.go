@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/BurntSushi/toml"
@@ -32,6 +33,10 @@ func CleanIndexActiveItems() {
 
 	tx := database.StartTransaction()
 	for _, e := range entries {
+		if !strings.HasSuffix(e.Name(), ".task") {
+			fmt.Printf("Detected Bad Filetype at %s\n", e.Name());
+			continue;
+		}
 		f, _ := database.QueryItemFingerprintByPath(filepath.Join("Active", e.Name()));
 		curr := file.Fingerprint(filepath.Join(path, e.Name()));
 		if f == 0 || f != curr {
@@ -43,7 +48,6 @@ func CleanIndexActiveItems() {
 			}
 			item.Fingerprint = f;
 			item.Path = filepath.Join("Active", e.Name())
-			fmt.Println(item);
 			database.AddItemWithTransaction(&item, false, tx);
 		}
 	}
@@ -57,7 +61,7 @@ func IndexActiveItem(shortPath string, tx *sql.Tx){
 	path := filepath.Join(directory.GetDataPath(), "Items", shortPath);
 	_, err := os.Stat(path);
 	if err != nil {
-		fmt.Println("File Missing!");
+		fmt.Printf("File Missing! Removing %s\n", path);
 		database.RemoveItemByPathWithTransaction(shortPath, tx);
 		return;
 	}
@@ -66,13 +70,11 @@ func IndexActiveItem(shortPath string, tx *sql.Tx){
 	if nf != f {
 		item := file.ReadActiveFile(path);
 		database.RemoveTagWithTransaction(item.Id, tx);
-		fmt.Println(item.Id);
 		for _, tag := range item.Tags {
 			database.AddTagWithTransaction(item.Id, tag, tx);
 		}
 		item.Fingerprint = nf;
 		item.Path = shortPath;
-		fmt.Println(item);
 		database.AddItemWithTransaction(&item, false, tx);
 	}
 	fmt.Println("Single Index completed in", time.Since(start));
@@ -87,7 +89,6 @@ func IndexTags(tx *sql.Tx){
 	database.ResetTags(tx);
 	var tags types.Tags;
 	_, err := toml.DecodeFile(filepath.Join(directory.GetDataPath(), "tags.toml"), &tags);
-	fmt.Println(tags);
 	if err != nil {
 		fmt.Println(err);
 	}
