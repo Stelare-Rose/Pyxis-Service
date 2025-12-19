@@ -15,6 +15,7 @@ import (
 	"github.com/Stelare-Rose/Pyxis-Service/internal/app/types"
 )
 
+// Full Clean Index
 func CleanIndexActiveItems() {
 	start := time.Now();
 	
@@ -56,6 +57,7 @@ func CleanIndexActiveItems() {
 	fmt.Println("Scan and Indexing completed in", time.Since(start));
 }
 
+// Single Item Index
 func IndexActiveItem(shortPath string, tx *sql.Tx){
 	start := time.Now();
 	path := filepath.Join(directory.GetDataPath(), "Items", shortPath);
@@ -80,6 +82,7 @@ func IndexActiveItem(shortPath string, tx *sql.Tx){
 	fmt.Println("Single Index completed in", time.Since(start));
 }
 
+// Tags Index
 func IndexTags(tx *sql.Tx){
 	endTx := false;
 	if tx == nil {
