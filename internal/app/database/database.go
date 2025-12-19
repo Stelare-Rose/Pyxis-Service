@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Stelare-Rose/Pyxis-Service/internal/app/directory"
+	"github.com/Stelare-Rose/Pyxis-Service/internal/app/environment"
 	"github.com/Stelare-Rose/Pyxis-Service/internal/app/types"
 	_ "modernc.org/sqlite"
 )
@@ -24,7 +25,11 @@ func Create(){
 	data, _ := os.ReadFile(filepath.Join(directory.GetCachePath(), "version"));
 	if string(data) != versionCode {
 		fmt.Println("Regenerating DB");
-		os.Remove(filepath.Join(directory.GetCachePath(), "main.db"));
+		if environment.GetEnvironment() == "dev" {
+			os.Remove(filepath.Join(directory.GetCachePath(), "dev.db"));
+		} else {
+			os.Remove(filepath.Join(directory.GetCachePath(), "main.db"));
+		}
 	}
 
 	if db == nil {
@@ -108,7 +113,11 @@ func StartTransaction() *sql.Tx{
 
 func EndTransaction(tx *sql.Tx){
 	tx.Commit();
-	os.WriteFile(filepath.Join(directory.GetCachePath(), "fingerprint"), []byte(strconv.FormatInt(time.Now().UnixMilli(), 10)), 0666);
+	if environment.GetEnvironment() == "dev" {
+		os.WriteFile(filepath.Join(directory.GetCachePath(), "fingerprint-dev"), []byte(strconv.FormatInt(time.Now().UnixMilli(), 10)), 0666);
+	} else {
+		os.WriteFile(filepath.Join(directory.GetCachePath(), "fingerprint"), []byte(strconv.FormatInt(time.Now().UnixMilli(), 10)), 0666);
+	}
 }
 
 func AddItem(Item *types.Item, isArchived bool){
@@ -326,7 +335,11 @@ func DropUnverifiedItems(){
 
 func open() {
 	var err error;
-	db, err = sql.Open("sqlite", filepath.Join(directory.GetCachePath(), "main.db"))
+	if environment.GetEnvironment() == "dev" {
+		db, err = sql.Open("sqlite", filepath.Join(directory.GetCachePath(), "dev.db"))
+	} else {
+		db, err = sql.Open("sqlite", filepath.Join(directory.GetCachePath(), "main.db"))
+	}
 	if err != nil {
 		fmt.Println(err);
 	}

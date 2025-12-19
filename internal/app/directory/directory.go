@@ -3,6 +3,8 @@ package directory
 import (
 	"os"
 	"path/filepath"
+
+	"github.com/Stelare-Rose/Pyxis-Service/internal/app/environment"
 )
 
 func GetCachePath() string { 
@@ -13,7 +15,11 @@ func GetCachePath() string {
 
 func GetDataPath() string {
 	base, _ := os.UserHomeDir();
-	base = filepath.Join(base, ".local", "share", "Pyxis");
+	if environment.GetEnvironment() == "dev" {
+		base = filepath.Join(base, ".local", "share", "Pyxis-dev");
+	} else {
+		base = filepath.Join(base, ".local", "share", "Pyxis");
+	}
 	return base;
 }
 

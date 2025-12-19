@@ -57,7 +57,7 @@ func ReadActiveFile(path string) types.Item {
 			}
 			item.Tags = append(item.Tags, tags...);
 		default:
-			fmt.Println(splitted[1]);
+			fmt.Println("Unknown Property Found: " + splitted[0] + " With Value " + splitted[1]);
 			}
 	}
 	return item;
