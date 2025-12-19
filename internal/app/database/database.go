@@ -17,7 +17,7 @@ import (
 var db *sql.DB
 
 func Create(){
-	versionCode := "0.0.3.2"
+	versionCode := "0.0.3-dev-rev1"
 	fmt.Println("Pyxis Running on Version Code " + versionCode + "!");
 	data, _ := os.ReadFile(filepath.Join(directory.GetCachePath(), "version"));
 	if string(data) != versionCode {
@@ -29,6 +29,7 @@ func Create(){
 		open();
 	}
 
+	// General Schema
 	_, err := db.Exec(`
 		CREATE TABLE IF NOT EXISTS items (
 			id TEXT NOT NULL PRIMARY KEY,
@@ -66,6 +67,27 @@ func Create(){
 		CREATE INDEX IF NOT EXISTS idx_items_tags_tag_id ON items_tags(tag_id);
 	`)
 
+	// Views
+	_, err = db.Exec(`
+		CREATE VIEW IF NOT EXISTS ActiveItems AS
+		SELECT 
+		i.id, 
+		i.name, 
+		i.type, 
+		i.path, 
+		i.status, 
+		i.endDate, 
+		i.startDate, 
+		i.priorityDate, 
+		i.fingerprint,
+		GROUP_CONCAT(t.id || ':' || t.tag || ':' || t.color, ';') AS tags
+		FROM items i
+		LEFT JOIN items_tags it ON i.id = it.item_id
+		LEFT JOIN tags t ON it.tag_id = t.id
+		WHERE i.isArchived = 0 
+		GROUP BY i.id
+		ORDER BY sortDate IS NULL, sortDate ASC, i.name
+	`)
 	os.WriteFile(filepath.Join(directory.GetCachePath(), "version"), []byte(versionCode), 0666);
 
 	if err != nil{
