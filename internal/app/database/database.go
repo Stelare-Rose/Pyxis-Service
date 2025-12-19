@@ -17,8 +17,10 @@ import (
 var db *sql.DB
 
 func Create(){
-	versionCode := "0.0.3-dev-rev1"
+	versionCode := "dev3-rev1"
 	fmt.Println("Pyxis Running on Version Code " + versionCode + "!");
+
+	// Database Check
 	data, _ := os.ReadFile(filepath.Join(directory.GetCachePath(), "version"));
 	if string(data) != versionCode {
 		fmt.Println("Regenerating DB");
