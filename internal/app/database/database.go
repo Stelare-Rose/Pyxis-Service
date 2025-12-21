@@ -18,7 +18,7 @@ import (
 var db *sql.DB
 
 func Create(){
-	versionCode := "dev3-rev1"
+	versionCode := "dev3-rev2"
 	fmt.Println("Pyxis Running on Version Code " + versionCode + "!");
 
 	// Database Check
@@ -46,11 +46,22 @@ func Create(){
 			endDate TEXT,
 			startDate TEXT,
 			priorityDate TEXT,
+			completedDate TEXT,
 			path TEXT,
 			fingerprint int64,
 			isArchived bool,
 			verified bool,
-			sortDate AS (COALESCE(NULLIF(startDate, ''), NULLIF(endDate, ''), NULLIF(priorityDate, '')))
+			sortDate AS (
+				COALESCE(
+					CASE
+						WHEN status = 'Done' THEN NULLIF(completedDate, '')
+						ELSE NULL
+					END,
+					NULLIF(startDate, ''),
+					NULLIF(endDate, ''),
+					NULLIF(priorityDate, '')
+				)
+			)
 		);
 		CREATE TABLE IF NOT EXISTS tags (
 			id TEXT PRIMARY KEY,
@@ -86,6 +97,7 @@ func Create(){
 		i.endDate, 
 		i.startDate, 
 		i.priorityDate, 
+		i.completedDate,
 		i.fingerprint,
 		GROUP_CONCAT(t.id || ':' || t.tag || ':' || t.color, ';') AS tags
 		FROM items i
@@ -125,8 +137,8 @@ func AddItem(Item *types.Item, isArchived bool){
 		open();
 	}
 	_, err := db.Exec(
-		`INSERT INTO items (id, type, name, status, endDate, startDate, priorityDate, path, fingerprint, isArchived, verified) 
-		VALUES (?,?,?,?,?,?,?,?,?,?,?)
+		`INSERT INTO items (id, type, name, status, endDate, startDate, priorityDate, completedDate, path, fingerprint, isArchived, verified) 
+		VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
 		ON CONFLICT(id) DO UPDATE SET
 			type = excluded.type,
 			name = excluded.name,
@@ -134,6 +146,7 @@ func AddItem(Item *types.Item, isArchived bool){
 			endDate = excluded.endDate,
 			startDate = excluded.startDate,
 			priorityDate = excluded.priorityDate,
+			completedDate = excluded.completedDate,
 			path = excluded.path,
 			fingerprint = excluded.fingerprint,
 			isArchived = excluded.isArchived,
@@ -146,6 +159,7 @@ func AddItem(Item *types.Item, isArchived bool){
 		Item.EndDate,
 		Item.StartDate,
 		Item.PriorityDate,
+		Item.CompletedDate,
 		Item.Path,
 		Item.Fingerprint,
 		isArchived,
@@ -157,8 +171,8 @@ func AddItem(Item *types.Item, isArchived bool){
 }
 func AddItemWithTransaction(Item *types.Item, isArchived bool, tx *sql.Tx){
 	_, err := tx.Exec(
-		`INSERT INTO items (id, type, name, status, endDate, startDate, priorityDate, path, fingerprint, isArchived, verified) 
-		VALUES (?,?,?,?,?,?,?,?,?, ?,?)
+		`INSERT INTO items (id, type, name, status, endDate, startDate, priorityDate, completedDate, path, fingerprint, isArchived, verified) 
+		VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
 		ON CONFLICT(id) DO UPDATE SET
 			type = excluded.type,
 			name = excluded.name,
@@ -166,6 +180,7 @@ func AddItemWithTransaction(Item *types.Item, isArchived bool, tx *sql.Tx){
 			endDate = excluded.endDate,
 			startDate = excluded.startDate,
 			priorityDate = excluded.priorityDate,
+			completedDate = excluded.completedDate,
 			path = excluded.path,
 			fingerprint = excluded.fingerprint,
 			isArchived = excluded.isArchived,
@@ -178,6 +193,7 @@ func AddItemWithTransaction(Item *types.Item, isArchived bool, tx *sql.Tx){
 		Item.EndDate,
 		Item.StartDate,
 		Item.PriorityDate,
+		Item.CompletedDate,
 		Item.Path,
 		Item.Fingerprint,
 		isArchived,
