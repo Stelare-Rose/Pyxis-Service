@@ -44,6 +44,9 @@ func CleanIndexActiveItems() {
 			f = curr;
 			item := file.ReadActiveItemFile(filepath.Join(path, e.Name()));
 			database.RemoveItemTag(item.Id, tx);
+			if len(item.Id) == 0 {
+				break;
+			}
 			for _, tag := range item.Tags {
 				database.AddItemTag(item.Id, tag, tx);
 			}
@@ -85,6 +88,9 @@ func CleanIndexActiveIdeas() {
 			f = curr;
 			item := file.ReadActiveIdeaFile(filepath.Join(path, e.Name()));
 			database.RemoveIdeaTag(item.Id, tx);
+			if len(item.Id) == 0 {
+				break;
+			}
 			for _, tag := range item.Tags {
 				database.AddIdeaTag(item.Id, tag, tx);
 			}
@@ -113,6 +119,10 @@ func IndexActiveItem(shortPath string, tx *sql.Tx){
 	if nf != f {
 		item := file.ReadActiveItemFile(path);
 		database.RemoveItemTag(item.Id, tx);
+		if len(item.Id) == 0 {
+			fmt.Println("Single Index completed in", time.Since(start));
+			return;
+		}
 		for _, tag := range item.Tags {
 			database.AddItemTag(item.Id, tag, tx);
 		}
@@ -136,6 +146,10 @@ func IndexActiveIdea(shortPath string, tx *sql.Tx){
 	if nf != f {
 		item := file.ReadActiveIdeaFile(path);
 		database.RemoveIdeaTag(item.Id, tx);
+		if len(item.Id) == 0 {
+			fmt.Println("Single Index completed in", time.Since(start));
+			return;
+		}
 		for _, tag := range item.Tags {
 			database.AddIdeaTag(item.Id, tag, tx);
 		}

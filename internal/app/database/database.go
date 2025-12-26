@@ -18,7 +18,7 @@ import (
 var db *sql.DB
 
 func Create(){
-	versionCode := "dev4-rev1"
+	versionCode := "dev4-rev2"
 	fmt.Println("Pyxis Running on Version Code " + versionCode + "!");
 
 	// Database Check
