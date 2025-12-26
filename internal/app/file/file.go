@@ -9,7 +9,7 @@ import (
 	"github.com/Stelare-Rose/Pyxis-Service/internal/app/types"
 )
 
-func ReadActiveFile(path string) types.Item {
+func ReadActiveItemFile(path string) types.Item {
 	file, _ := os.Open(path);
 	defer file.Close();
 
@@ -64,7 +64,47 @@ func ReadActiveFile(path string) types.Item {
 	}
 	return item;
 }
+func ReadActiveIdeaFile(path string) types.Idea {
+	file, _ := os.Open(path);
+	defer file.Close();
 
+	scanner := bufio.NewScanner(file);
+	var item types.Idea;
+	for scanner.Scan() {
+		if scanner.Text() == "-----" {
+			break;
+		}
+		splitted := strings.SplitN(scanner.Text(), ":", 2);
+		switch (splitted[0]){
+		case "[ID]":
+			item.Id = splitted[1];
+		case "[Name]":
+			item.Name = splitted[1];
+		case "[Status]":
+			item.Status = splitted[1];
+		case "[Created-Date]":
+			item.CreatedDate = splitted[1];
+		case "[Priority-Date]":
+			item.PriorityDate = splitted[1];
+		case "[Completed-Date]":
+			item.CompletedDate = splitted[1];
+		case "[Tags]":
+			tags := strings.Split(splitted[1], ",");
+			for i := range tags {
+				parts := strings.Split(tags[i], "::");
+				if len(parts) < 2 {
+					continue;
+				}
+				tags[i] = parts[1];
+				tags[i] = strings.TrimSpace(tags[i]);
+			}
+			item.Tags = append(item.Tags, tags...);
+		default:
+			fmt.Println("Unknown Property Found: " + splitted[0] + " With Value " + splitted[1]);
+			}
+	}
+	return item;
+}
 func Fingerprint(path string) int64 {
 	file, _ := os.Stat(path);
 	return file.Size() + file.ModTime().Unix();

@@ -42,14 +42,55 @@ func CleanIndexActiveItems() {
 		curr := file.Fingerprint(filepath.Join(path, e.Name()));
 		if f == 0 || f != curr {
 			f = curr;
-			item := file.ReadActiveFile(filepath.Join(path, e.Name()));
-			database.RemoveTagWithTransaction(item.Id, tx);
+			item := file.ReadActiveItemFile(filepath.Join(path, e.Name()));
+			database.RemoveItemTag(item.Id, tx);
 			for _, tag := range item.Tags {
-				database.AddTagWithTransaction(item.Id, tag, tx);
+				database.AddItemTag(item.Id, tag, tx);
 			}
 			item.Fingerprint = f;
 			item.Path = filepath.Join("Active", e.Name())
-			database.AddItemWithTransaction(&item, false, tx);
+			database.AddItem(&item, false, tx);
+		}
+	}
+	database.EndTransaction(tx);
+
+	fmt.Println("Scan and Indexing completed in", time.Since(start));
+}
+
+func CleanIndexActiveIdeas() {
+	start := time.Now();
+	
+	path := filepath.Join(directory.GetDataPath(), "Ideas", "Active");
+	entries, _:= os.ReadDir(path);
+
+	database.ResetActiveIdeas()
+	
+	names := make([]string, 0);
+	for _, e := range entries {
+		name := filepath.Join("Active", e.Name());
+		names = append(names, name);	
+	}
+	database.VerifyIdeas(names);
+	database.DropUnverifiedIdeas();
+
+	tx := database.StartTransaction()
+	for _, e := range entries {
+		if !strings.HasSuffix(e.Name(), ".idea") {
+			fmt.Printf("Detected Bad Filetype at %s\n", e.Name());
+			continue;
+		}
+		f, _ := database.QueryIdeaFingerprintByPath(filepath.Join("Active", e.Name()));
+		curr := file.Fingerprint(filepath.Join(path, e.Name()));
+		if f == 0 || f != curr {
+			f = curr;
+			item := file.ReadActiveIdeaFile(filepath.Join(path, e.Name()));
+			database.RemoveIdeaTag(item.Id, tx);
+			for _, tag := range item.Tags {
+				database.AddIdeaTag(item.Id, tag, tx);
+			}
+			item.Fingerprint = f;
+			item.Path = filepath.Join("Active", e.Name())
+			database.AddIdea(&item, false, tx);
 		}
 	}
 	database.EndTransaction(tx);
@@ -64,24 +105,46 @@ func IndexActiveItem(shortPath string, tx *sql.Tx){
 	_, err := os.Stat(path);
 	if err != nil {
 		fmt.Printf("File Missing! Removing %s\n", path);
-		database.RemoveItemByPathWithTransaction(shortPath, tx);
+		database.RemoveItemByPath(shortPath, tx);
 		return;
 	}
 	f, _ := database.QueryItemFingerprintByPath(path);
 	nf := file.Fingerprint(path);
 	if nf != f {
-		item := file.ReadActiveFile(path);
-		database.RemoveTagWithTransaction(item.Id, tx);
+		item := file.ReadActiveItemFile(path);
+		database.RemoveItemTag(item.Id, tx);
 		for _, tag := range item.Tags {
-			database.AddTagWithTransaction(item.Id, tag, tx);
+			database.AddItemTag(item.Id, tag, tx);
 		}
 		item.Fingerprint = nf;
 		item.Path = shortPath;
-		database.AddItemWithTransaction(&item, false, tx);
+		database.AddItem(&item, false, tx);
 	}
 	fmt.Println("Single Index completed in", time.Since(start));
 }
 
+func IndexActiveIdea(shortPath string, tx *sql.Tx){
+	start := time.Now();
+	path := filepath.Join(directory.GetDataPath(), "Ideas", shortPath);
+	_, err := os.Stat(path);
+	if err != nil {
+		fmt.Printf("File Missing! Removing %s\n", path);
+		return;
+	}	
+	f, _ := database.QueryIdeaFingerprintByPath(path);
+	nf := file.Fingerprint(path);
+	if nf != f {
+		item := file.ReadActiveIdeaFile(path);
+		database.RemoveIdeaTag(item.Id, tx);
+		for _, tag := range item.Tags {
+			database.AddIdeaTag(item.Id, tag, tx);
+		}
+		item.Fingerprint = nf;
+		item.Path = shortPath;
+		database.AddIdea(&item, false, tx);
+	}
+	fmt.Println("Single Index completed in", time.Since(start));
+}
 // Tags Index
 func IndexTags(tx *sql.Tx){
 	endTx := false;
@@ -97,7 +160,7 @@ func IndexTags(tx *sql.Tx){
 	}
 
 	for id, tag := range tags.Tags {
-		database.AddTagsWithTransaction(id, tag.Tag, tag.Color, tx);
+		database.AddTags(id, tag.Tag, tag.Color, tx);
 	}
 
 	if endTx {

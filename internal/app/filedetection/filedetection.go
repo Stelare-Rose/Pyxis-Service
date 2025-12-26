@@ -78,6 +78,10 @@ func Start(){
 						core.IndexActiveItem(key, tx);
 						continue;
 					}
+					if strings.HasPrefix(key, "Active/") && strings.HasSuffix(key, ".idea"){
+						core.IndexActiveIdea(key, tx);
+						continue;
+					}
 				}
 				database.EndTransaction(tx);
 			}
@@ -112,6 +116,8 @@ func Start(){
 	path := filepath.Join(directory.GetDataPath());
 	err = watcher.Add(path);
 	path = filepath.Join(directory.GetDataPath(), "Items", "Active");
+	err = watcher.Add(path);
+	path = filepath.Join(directory.GetDataPath(), "Ideas", "Active");
 	err = watcher.Add(path);
 	if err != nil {
 		fmt.Println(err);

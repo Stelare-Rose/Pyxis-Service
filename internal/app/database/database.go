@@ -18,7 +18,7 @@ import (
 var db *sql.DB
 
 func Create(){
-	versionCode := "dev3-rev2"
+	versionCode := "dev4-rev1"
 	fmt.Println("Pyxis Running on Version Code " + versionCode + "!");
 
 	// Database Check
@@ -63,6 +63,28 @@ func Create(){
 				)
 			)
 		);
+		CREATE TABLE IF NOT EXISTS ideas (
+			id TEXT NOT NULL PRIMARY KEY,
+			name TEXT,
+			status TEXT,
+			createdDate TEXT,
+			priorityDate TEXT,
+			completedDate TEXT,
+			path TEXT,
+			fingerprint int64,
+			isArchived bool,
+			verified bool,
+			sortDate AS (
+				COALESCE(
+					CASE
+						WHEN status = 'Done' THEN NULLIF(completedDate, '')
+						ELSE NULL
+					END,
+					NULLIF(createdDate, ''),
+					NULLIF(priorityDate, '')
+				)
+			)
+		);
 		CREATE TABLE IF NOT EXISTS tags (
 			id TEXT PRIMARY KEY,
 			tag TEXT,
@@ -74,15 +96,27 @@ func Create(){
 			tag_id TEXT,
 			PRIMARY KEY (item_id, tag_id),
 			FOREIGN KEY (item_id) REFERENCES items(id)
+		);	
+		CREATE TABLE IF NOT EXISTS ideas_tags (
+			idea_id TEXT,
+			tag_id TEXT,
+			PRIMARY KEY (idea_id, tag_id),
+			FOREIGN KEY (idea_id) REFERENCES ideas(id)
 		);
-		CREATE INDEX IF NOT EXISTS idx_items_path ON items(path);
-		CREATE INDEX IF NOT EXISTS idx_items_status_archived ON items(status, isArchived);
-		CREATE INDEX IF NOT EXISTS idx_items_priorityDate ON items(priorityDate);
-		CREATE INDEX IF NOT EXISTS idx_items_sortDate ON items(sortDate);
 		CREATE INDEX IF NOT EXISTS idx_items_name ON items(name);
+		CREATE INDEX IF NOT EXISTS idx_items_path ON items(path);
+		CREATE INDEX IF NOT EXISTS idx_items_archived ON items(isArchived);
+		CREATE INDEX IF NOT EXISTS idx_items_sortDate ON items(sortDate);
+
+		CREATE INDEX IF NOT EXISTS idx_ideas_name ON ideas(name);
+		CREATE INDEX IF NOT EXISTS idx_ideas_path ON ideas(path);
+		CREATE INDEX IF NOT EXISTS idx_ideas_archived ON ideas(isArchived);
+		CREATE INDEX IF NOT EXISTS idx_ideas_sortDate ON ideas(sortDate);
 
 		CREATE INDEX IF NOT EXISTS idx_items_tags_item_id ON items_tags(item_id);
 		CREATE INDEX IF NOT EXISTS idx_items_tags_tag_id ON items_tags(tag_id);
+		CREATE INDEX IF NOT EXISTS idx_ideas_tags_idea_id ON ideas_tags(idea_id);
+		CREATE INDEX IF NOT EXISTS idx_ideas_tags_tag_id ON ideas_tags(tag_id);
 	`)
 
 	// Views
@@ -102,6 +136,25 @@ func Create(){
 		GROUP_CONCAT(t.id || ':' || t.tag || ':' || t.color, ';') AS tags
 		FROM items i
 		LEFT JOIN items_tags it ON i.id = it.item_id
+		LEFT JOIN tags t ON it.tag_id = t.id
+		WHERE i.isArchived = 0 
+		GROUP BY i.id
+		ORDER BY sortDate IS NULL, sortDate ASC, i.name
+	`)
+	_, err = db.Exec(`
+		CREATE VIEW IF NOT EXISTS ActiveIdeas AS
+		SELECT 
+		i.id, 
+		i.name, 
+		i.status, 
+		i.path, 
+		i.createdDate, 
+		i.priorityDate, 
+		i.completedDate,
+		i.fingerprint,
+		GROUP_CONCAT(t.id || ':' || t.tag || ':' || t.color, ';') AS tags
+		FROM ideas i
+		LEFT JOIN ideas_tags it ON i.id = it.idea_id
 		LEFT JOIN tags t ON it.tag_id = t.id
 		WHERE i.isArchived = 0 
 		GROUP BY i.id
@@ -132,44 +185,7 @@ func EndTransaction(tx *sql.Tx){
 	}
 }
 
-func AddItem(Item *types.Item, isArchived bool){
-	if db == nil {
-		open();
-	}
-	_, err := db.Exec(
-		`INSERT INTO items (id, type, name, status, endDate, startDate, priorityDate, completedDate, path, fingerprint, isArchived, verified) 
-		VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
-		ON CONFLICT(id) DO UPDATE SET
-			type = excluded.type,
-			name = excluded.name,
-			status = excluded.status,
-			endDate = excluded.endDate,
-			startDate = excluded.startDate,
-			priorityDate = excluded.priorityDate,
-			completedDate = excluded.completedDate,
-			path = excluded.path,
-			fingerprint = excluded.fingerprint,
-			isArchived = excluded.isArchived,
-			verified = excluded.verified;
-		;`, 
-		Item.Id, 
-		Item.Type, 
-		Item.Name,
-		Item.Status,
-		Item.EndDate,
-		Item.StartDate,
-		Item.PriorityDate,
-		Item.CompletedDate,
-		Item.Path,
-		Item.Fingerprint,
-		isArchived,
-		true);
-
-	if err != nil {
-		fmt.Println(err);
-	}
-}
-func AddItemWithTransaction(Item *types.Item, isArchived bool, tx *sql.Tx){
+func AddItem(Item *types.Item, isArchived bool, tx *sql.Tx){
 	_, err := tx.Exec(
 		`INSERT INTO items (id, type, name, status, endDate, startDate, priorityDate, completedDate, path, fingerprint, isArchived, verified) 
 		VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
@@ -203,16 +219,53 @@ func AddItemWithTransaction(Item *types.Item, isArchived bool, tx *sql.Tx){
 		fmt.Println(err);
 	}
 }
+func AddIdea(Item *types.Idea, isArchived bool, tx *sql.Tx){
+	_, err := tx.Exec(
+		`INSERT INTO ideas (id, name, status, createdDate, priorityDate, completedDate, path, fingerprint, isArchived, verified) 
+		VALUES (?,?,?,?,?,?,?,?,?,?)
+		ON CONFLICT(id) DO UPDATE SET
+			name = excluded.name,
+			status = excluded.status,
+			createdDate = excluded.createdDate,
+			priorityDate = excluded.priorityDate,
+			completedDate = excluded.completedDate,
+			path = excluded.path,
+			fingerprint = excluded.fingerprint,
+			isArchived = excluded.isArchived,
+			verified = excluded.verified;
+		;`, 
+		Item.Id, 
+		Item.Name,
+		Item.Status,
+		Item.CreatedDate,
+		Item.PriorityDate,
+		Item.CompletedDate,
+		Item.Path,
+		Item.Fingerprint,
+		isArchived,
+		true);
 
-func RemoveTagWithTransaction(id string, tx *sql.Tx){
+	if err != nil {
+		fmt.Println(err);
+	}
+}
+
+
+func RemoveItemTag(id string, tx *sql.Tx){
 	_, err := tx.Exec(
 		`DELETE FROM items_tags WHERE item_id = ?`, id);
 	if err != nil {
 		fmt.Println(err);
 	}
 }
-
-func AddTagWithTransaction(id string, tag_id string, tx *sql.Tx){
+func RemoveIdeaTag(id string, tx *sql.Tx){
+	_, err := tx.Exec(
+		`DELETE FROM ideas_tags WHERE idea_id = ?`, id);
+	if err != nil {
+		fmt.Println(err);
+	}
+}
+func AddItemTag(id string, tag_id string, tx *sql.Tx){
 	fmt.Println("adding " + tag_id);
 	_, err := tx.Exec(
 		`INSERT OR IGNORE INTO items_tags (item_id, tag_id) values (?, ?)`, 
@@ -222,8 +275,17 @@ func AddTagWithTransaction(id string, tag_id string, tx *sql.Tx){
 		fmt.Println(err);
 	}
 }
+func AddIdeaTag(id string, tag_id string, tx *sql.Tx){
+	fmt.Println("adding " + tag_id);
+	_, err := tx.Exec(
+		`INSERT OR IGNORE INTO ideas_tags (idea_id, tag_id) values (?, ?)`, 
+		id, tag_id);
 
-func AddTagsWithTransaction(id string, tag string, colors []string, tx *sql.Tx){
+	if err != nil {
+		fmt.Println(err);
+	}
+}
+func AddTags(id string, tag string, colors []string, tx *sql.Tx){
 	color := strings.Join(colors, ",")
 	_, err := tx.Exec(
 		`
@@ -273,17 +335,25 @@ func QueryItemFingerprintByPath(path string) (int64, error){
 
 	return fingerprint, err;
 }
-
-func RemoveItemByPath(path string){
+func QueryIdeaFingerprintByPath(path string) (int64, error){
 	if db == nil {
 		open();
 	}
+	var fingerprint int64;
+	row := db.QueryRow(
+		`SELECT fingerprint FROM ideas WHERE path=?;`, 
+		path);
+	
+	err := row.Scan(&fingerprint);
+	if err != nil {
+		fmt.Println(err);
+	}
 
-	db.Exec(`
-		DELETE FROM items WHERE path=?;
-	`, path);
+	return fingerprint, err;
 }
-func RemoveItemByPathWithTransaction(path string, tx *sql.Tx){
+
+
+func RemoveItemByPath(path string, tx *sql.Tx){
 	if db == nil {
 		open();
 	}
@@ -321,6 +391,21 @@ func ResetActiveItems() {
 		fmt.Println(err);
 	}
 }
+func ResetActiveIdeas() {
+	if db == nil {
+		open();
+	}
+	_, err := db.Exec(`
+		UPDATE ideas
+		SET verified=0
+		WHERE isArchived=0;
+		`,
+	);
+	if err != nil {
+		fmt.Println(err);
+	}
+}
+
 
 func VerifyItems(paths []string){
 	if db == nil {
@@ -338,7 +423,22 @@ func VerifyItems(paths []string){
 	}
 	tx.Commit();
 }
+func VerifyIdeas(paths []string){
+	if db == nil {
+		open();
+	}
+	tx, _ := db.Begin();
+	stmt, _ := tx.Prepare(`
+	UPDATE ideas
+	SET verified=1
+	WHERE path=?;
+	`);
 
+	for _, path := range paths {
+		stmt.Exec(path);
+	}
+	tx.Commit();
+}
 func DropUnverifiedItems(){
 	if db == nil {
 		open();
@@ -348,6 +448,16 @@ func DropUnverifiedItems(){
 	tx.Exec(`DELETE FROM items WHERE isArchived=0 AND verified=0`);
 	tx.Commit();
 }
+func DropUnverifiedIdeas(){
+	if db == nil {
+		open();
+	}
+
+	tx, _ := db.Begin();
+	tx.Exec(`DELETE FROM ideas WHERE isArchived=0 AND verified=0`);
+	tx.Commit();
+}
+
 
 func open() {
 	var err error;

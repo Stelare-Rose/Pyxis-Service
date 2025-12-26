@@ -1,9 +1,5 @@
 package types
 
-type Items struct {
-	Item []Item `json:"items"`;
-}
-
 type Item struct {
 	Id string;
 	Type string;
@@ -21,6 +17,19 @@ type Item struct {
 	IsVerified bool;
 }
 
+type Idea struct {
+	Id string;
+	Name string;
+	Status string;
+	CreatedDate string;
+	PriorityDate string;
+	CompletedDate string;
+	Tags []string;
+	Path string;
+	Fingerprint int64;
+	IsArchived bool;
+	IsVerified bool;
+}
 type Tags struct {
 	Tags map[string]Tag `toml:"tags"`;
 }
