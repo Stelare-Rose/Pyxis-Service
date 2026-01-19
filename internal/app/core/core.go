@@ -139,6 +139,7 @@ func IndexActiveIdea(shortPath string, tx *sql.Tx){
 	_, err := os.Stat(path);
 	if err != nil {
 		fmt.Printf("File Missing! Removing %s\n", path);
+		database.RemoveIdeaByPath(shortPath, tx);
 		return;
 	}	
 	f, _ := database.QueryIdeaFingerprintByPath(path);

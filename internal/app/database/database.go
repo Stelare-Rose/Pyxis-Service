@@ -367,6 +367,21 @@ func RemoveItemByPath(path string, tx *sql.Tx){
 		fmt.Println(err);
 	}
 }
+func RemoveIdeaByPath(path string, tx *sql.Tx){
+	if db == nil {
+		open();
+	}
+
+	fmt.Println("Hello!");
+	_, err := tx.Exec(`
+		DELETE FROM ideas WHERE path=?;
+	`, path);
+	fmt.Println(path);
+	if err != nil {
+		fmt.Println(err);
+	}
+}
+
 func ResetTags(tx *sql.Tx) {
 	_, err := tx.Exec(`
 		UPDATE tags
